@@ -1,0 +1,105 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// User
+model User {
+  id              Int      @id @default(autoincrement())
+  email           String   @unique
+  name            String?
+  password        String
+  role            Role     @default(USER)
+  isEmailVerified Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  Token           Token[]
+  projects        Project[] @relation("ProjectWorkers")
+  ownedProjects   Project[]
+  tasks           Task[]
+}
+
+model Token {
+  id          Int       @id @default(autoincrement())
+  token       String
+  type        TokenType
+  expires     DateTime
+  blacklisted Boolean
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+}
+
+// Projects
+
+model Project {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  owner       User      @relation(fields: [ownerId], references: [id])
+  ownerId     Int       @unique
+  // all workers/devs for this project (one to many)
+  workers    User[]     @relation("ProjectWorkers")
+  // sprints one to many
+  sprints     Sprint[]
+}
+
+// Sprints
+
+model Sprint {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  // one to many
+  project     Project   @relation(fields: [projectId], references: [id])
+  projectId   Int
+  // one to many
+  tasks       Task[]
+}
+
+model Task {
+  id Int @id @default(autoincrement())
+  name String
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  completedAt DateTime?
+  sprint Sprint @relation(fields: [sprintId], references: [id])
+  sprintId Int
+  status TaskStatus @default(PENDING)
+  // worker
+  worker   User?   @relation(fields: [workerId], references: [id])
+  workerId Int?
+}
+
+
+// Enums
+enum Role {
+  USER
+  ADMIN
+}
+
+enum TokenType {
+  ACCESS
+  REFRESH
+  RESET_PASSWORD
+  VERIFY_EMAIL
+}
+
+enum TaskStatus {
+  PENDING
+  ONGOING
+  DONE
+}
