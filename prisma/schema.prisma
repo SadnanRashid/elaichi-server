@@ -104,3 +104,8 @@ enum TaskStatus {
   ONGOING
   DONE
 }
+
+model test{
+  name String?
+  id Int @id @default(autoincrement())
+}
